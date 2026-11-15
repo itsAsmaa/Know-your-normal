@@ -1,77 +1,68 @@
-# Know Your Normal
+# Know Your Normal · web dashboard (prototype)
 
-A health self-check for astronauts on long-duration missions, built for the
-NASA Space Apps Challenge 2026: *Create Health Monitoring Software for
-Astronauts on Space Missions*.
+A React + Vite + TypeScript + Recharts version of the **Know Your Normal** astronaut-health
+prototype (`app.py`, `engine.py`, `generate_data.py`). It compares each simulated crew member
+with their own first 30 mission days and shows six body-system statuses with next steps.
 
-The app compares each astronaut with **their own normal**, learned from their
-first 30 mission days, instead of with an average person. Every day it shows a
-green, yellow or red status for six body systems, with a plain next step.
+> **Simulation only.** All 270 records are synthetic. This is a prototype, not a medical device,
+> and its results are not clinical guidance. It is not affiliated with or endorsed by NASA, and
+> nothing in it is live telemetry.
 
 ## Run it
 
 ```bash
-pip install -r requirements.txt
-python generate_data.py      # optional: data/crew_daily.csv is already included
-streamlit run app.py
+npm install
+npm run dev        # local development server
+npm run build      # type-check + production build into dist/
+npm run preview    # serve the production build
+npm run verify     # TypeScript engine vs. Python engine + scenario checks
 ```
 
-## What it does
+`dist/` is a static site: upload it to any static host (Netlify, GitHub Pages, Vercel). Open it
+through a web server, not by double-clicking `index.html`.
 
-1. **Gathers** a daily check-in: resting heart rate, heart rate variability,
-   blood pressure, sleep, mood, exercise, body temperature and dosimeter reading.
-2. **Learns each astronaut's normal** (average and usual spread) from days 1–30.
-3. **Rule check:** compares the last 3 days with that normal. Yellow at 2 SD,
-   red at 3 SD, or when two readings in the same system drift together.
-   Fever (≥ 38 °C) and radiation spikes (≥ 4× the normal dose rate) are red right away.
-4. **Pattern check:** an Isolation Forest (scikit-learn), trained on the
-   astronaut's own normal days, flags days whose overall combination of readings
-   is unusual, even when no single number crosses a line.
-5. **Tells them what to do:** each status has a next step, and the astronaut can
-   download a report for the flight surgeon.
+## What's preserved from the Python prototype
 
-## Emotion check (from Asmaa's graduation project)
+- **Data:** `src/data/crew_daily.csv` is the supplied CSV (270 rows), parsed at runtime.
+- **Rules:** `src/lib/engine.ts` is a line-by-line port of `engine.py`. Metric labels, units,
+  minimum spreads and next-step text are exported from `engine.py` into
+  `src/data/engineConstants.ts`, so they are identical.
+  - Personal baseline: mean and sample SD of days 1–30, floored per reading.
+  - Sustained readings: 3-day average; temperature and radiation: today's reading.
+  - Watch at 2 SD, Act at 3 SD; two readings off in one system → Act now.
+  - Temperature: Watch at 37.5 °C (or 2.5 SD), Act at 38 °C.
+  - Radiation: Watch when any of the last 3 days is ≥ 2× normal, Act when today is ≥ 4×;
+    mission total shown against the 600 mSv NASA-STD-3001 career limit (reference only).
+  - Early warning: first day the emotion check vs. self-rated mood leave their normal range.
+  - Report text: same as `report_text()` in `engine.py`.
+- **Pattern check:** `src/lib/iforest.ts` is a deterministic browser Isolation Forest set up like
+  engine.py (300 trees, 256-sample subsets, 3,000 jittered calibration copies, 99.5th-percentile
+  threshold). **It is not scikit-learn**: its random draws differ, so scores differ slightly. The
+  scikit-learn scores for the 270 supplied records are included (`src/data/sklearnReference.ts`)
+  and drawn as a dashed reference line, and the app shows how often the flags agree.
 
-Mood isn't only self-reported. Each day the astronaut records a short check-in,
-and the real-time emotion analyzer from Asmaa's Birzeit University graduation
-project (ENCS5300) estimates eight emotions: neutral, calm, happy, sad, angry,
-fearful, disgust and surprised. The share of negative emotions becomes a Mood
-indicator, compared with the astronaut's own normal next to their self-rated mood.
+## Checks (`npm run verify`)
 
-In the demo, the analyzer catches Eng. Karim's isolation stress several days
-before his self-rated mood does (see the **Emotion check** tab).
+- 270 records loaded.
+- Rule statuses, values, z-scores and drivers identical to the Python engine: **180/180** astronaut-days (days 31–90 × 3).
+- Flight-surgeon report text identical to Python (except the pattern-model line): **180/180**.
+- Isolation Forest flags agree with scikit-learn on **177/180** post-calibration days.
+- Scenarios: Lina's heart drift (Act now by day 90), Karim's isolation stress (emotion check day 61,
+  mood day 64; sleep, mood and exercise Act now by day 90), Maya's fever (Watch day 88, Act 89–90),
+  and the shared radiation spike (Act now days 61–62 for all three crew).
 
-The real analyzer is an SVM + Random Forest ensemble on MFCC, chroma and
-mel-spectrogram features, trained on RAVDESS (83.7% accuracy on 8 emotions). Its
-face module is built and ready to switch on. In this demo its daily outputs are
-simulated (`emo_*` columns and `negative_emotion_pct` in the data). To plug in the
-real analyzer, write its 8 emotion probabilities for each check-in into those columns.
+## Features
 
-| Body system   | Readings                           | Space health risk covered |
-|---------------|------------------------------------|---------------------------|
-| Heart         | resting HR, HRV, systolic BP       | cardiovascular events     |
-| Bone & muscle | exercise minutes                   | bone loss (countermeasure)|
-| Sleep         | sleep hours                        | behavioral health         |
-| Mood          | mood rating 1–5, negative emotions from the emotion check | isolation and confinement |
-| Immune        | body temperature                   | immune changes / infection|
-| Radiation     | daily dose, mission total          | space radiation (600 mSv NASA career limit, NASA-STD-3001) |
+Crew selection, mission-day replay, status cards, trends with calibration shading and personal
+range, emotion mix history and daily breakdown, pattern check, daily check-in saved to
+localStorage, crew comparison, flight-surgeon text report, CSV export on every chart, all-records
+CSV, print / save as PDF, dark mode, reset to the supplied data, and a mobile layout.
 
-## Demo data
+Inside the claude.ai artifact frame, file downloads go through the host's download prompt (or a
+copy-to-clipboard dialog), and printing is hidden because the frame blocks it.
 
-`generate_data.py` simulates 90 days for a 3-person crew, with planted problems:
+## Use of Super Intelligence (SI)
 
-- **Cmdr. Lina:** heart drift from day 70 (heart rate up, HRV down, blood pressure up)
-- **Eng. Karim:** isolation stress from day 55 (sleep and mood drop), skipped exercise from day 81
-- **Spec. Maya:** fever from day 88
-- **Whole crew:** solar particle event on days 61–62
-
-Use the **Mission day** slider to replay the mission and watch the alerts appear.
-
-## Files
-
-- `app.py` – Streamlit dashboard
-- `engine.py` – baseline, rule check, Isolation Forest, report
-- `generate_data.py` – simulated crew data
-- `data/crew_daily.csv` – the generated data
-
-Prototype only, not a medical device. All data is simulated.
+Built with help from Claude (Anthropic), an SI tool: the code, text and this README were written
+with Claude and checked by the team. The data is simulated. The emotion analyzer the emotion check
+stands in for comes from Asmaa's graduation project (Birzeit University, ENCS5300).
