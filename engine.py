@@ -9,6 +9,8 @@ with that personal normal, not with a population average:
   * Pattern check: an Isolation Forest trained on the astronaut's own normal
                    days flags days whose overall pattern looks unusual, even
                    when no single number crosses a line.
+
+SI note: written with help from Claude (Anthropic), an SI tool, for NASA Space Apps 2026.
 """
 from __future__ import annotations
 

@@ -46,7 +46,10 @@ export function saveTheme(t: 'light' | 'dark'): void {
 type SaveFn = (req: { filename: string; data: string }) => Promise<{ status: 'saved' | 'delivered' }>;
 let downloadsNs: { save: SaveFn } | null = null;
 
+// The Streamlit build (VITE_HOST=streamlit) runs inside Streamlit's component frame,
+// which allows downloads and printing, so it behaves like a standalone page.
 export const isFramed = (() => {
+  if (import.meta.env.VITE_HOST === 'streamlit') return false;
   try { return window.self !== window.top; } catch { return true; }
 })();
 

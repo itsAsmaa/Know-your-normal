@@ -1,0 +1,10 @@
+// Single-file build for embedding in Streamlit (app.py). Run: npm run build:streamlit
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
+import { viteSingleFile } from 'vite-plugin-singlefile';
+
+export default defineConfig({
+  plugins: [react(), viteSingleFile()],
+  base: './',
+  build: { outDir: 'dist-streamlit', assetsInlineLimit: 100_000_000, cssCodeSplit: false, chunkSizeWarningLimit: 2000 },
+});

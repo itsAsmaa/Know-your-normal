@@ -14,6 +14,8 @@ analyzer (probabilities for 8 emotions from a short daily check-in). Karim's
 emotion mix shifts toward sad and fearful as his isolation stress grows.
 
 Run:  python generate_data.py   ->  writes data/crew_daily.csv
+
+SI note: written with help from Claude (Anthropic), an SI tool, for NASA Space Apps 2026.
 """
 from pathlib import Path
 

@@ -1,0 +1,4 @@
+node_modules/
+dist-streamlit/
+__pycache__/
+*.pyc

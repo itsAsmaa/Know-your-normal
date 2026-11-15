@@ -8,7 +8,21 @@ with their own first 30 mission days and shows six body-system statuses with nex
 > and its results are not clinical guidance. It is not affiliated with or endorsed by NASA, and
 > nothing in it is live telemetry.
 
-## Run it
+## Run it on Streamlit
+
+`app.py` shows the dashboard as a full-page Streamlit app (Streamlit Community Cloud: repo
+`itsAsmaa/Know-your-normal`, branch `main`, main file `app.py`). The dashboard itself is the
+single-file build in `dashboard/index.html`; rebuild it with `npm run build:streamlit` and copy
+`dist-streamlit/index.html` to `dashboard/index.html`. The original Python prototype is still
+available: `streamlit run prototype_app.py`.
+
+```bash
+pip install -r requirements.txt
+streamlit run app.py             # new dashboard
+streamlit run prototype_app.py   # original Python prototype
+```
+
+## Run the web app directly
 
 ```bash
 npm install
